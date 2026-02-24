@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>時間の経過プリント</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: white !important; padding: 0 !important; }
+            .print-page {
+                width: 210mm;
+                min-height: 297mm;
+                padding: 15mm;
+                margin: 0;
+                box-sizing: border-box;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            /* 印刷時は編集枠を消す */
+            .editable { 
+                border-color: transparent !important; 
+                background-color: transparent !important; 
+                outline: none !important; 
+            }
+        }
+        .print-page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            padding: 15mm;
+            box-sizing: border-box;
+            font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+        }
+        /* 1カラム（横に1問）に変更 */
+        .question-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 40px;
+        }
+        .q-text {
+            line-height: 1.6;
+            font-size: 1.25rem;
+        }
+        .answer-line {
+            border-bottom: 1px solid black;
+            display: inline-block;
+            min-width: 150px;
+            margin-left: 5px;
+        }
+        /* カスタムラジオボタンのスタイル */
+        .peer:checked + span {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
+            border-color: #0ea5e9;
+        }
+        /* クリックして編集できる要素のスタイル */
+        .editable {
+            padding: 2px 4px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            cursor: text;
+        }
+        .editable:hover {
+            border-color: #cbd5e1; /* slate-300 */
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .editable:focus {
+            outline: none;
+            border-color: #3b82f6; /* blue-500 */
+            background-color: #eff6ff; /* blue-50 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+
+    <!-- 設定パネル -->
+    <div class="no-print max-w-[210mm] mx-auto bg-white p-6 rounded-lg shadow-md mb-8">
+        <h1 class="text-xl font-bold mb-4 border-b pb-2">プリント設定（時間の経過）</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block font-bold mb-2">問題数（1カラム用）</label>
+                <div class="flex flex-wrap gap-2">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="qCount" value="4" class="hidden peer" checked>
+                        <span class="px-4 py-2 border rounded hover:bg-gray-50 transition-colors">4問</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="qCount" value="5" class="hidden peer">
+                        <span class="px-4 py-2 border rounded hover:bg-gray-50 transition-colors">5問</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="qCount" value="6" class="hidden peer">
+                        <span class="px-4 py-2 border rounded hover:bg-gray-50 transition-colors">6問</span>
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold mb-2">分のきざみ</label>
+                <div class="flex gap-4">
+                    <label class="inline-flex items-center"><input type="radio" name="step" value="1" checked> <span class="ml-2">1分</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="step" value="5"> <span class="ml-2">5分</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="step" value="10"> <span class="ml-2">10分</span></label>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold mb-2">1時間を超えるか</label>
+                <div class="flex gap-4">
+                    <label class="inline-flex items-center"><input type="radio" name="overHour" value="no" checked> <span class="ml-2">超えない</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="overHour" value="yes"> <span class="ml-2">超える</span></label>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold mb-2">出題内容</label>
+                <div class="flex flex-wrap gap-4">
+                    <label class="inline-flex items-center"><input type="radio" name="direction" value="after"> <span class="ml-2">後だけ（何分後？）</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="direction" value="before"> <span class="ml-2">前だけ（何分前？）</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="direction" value="mixed" checked> <span class="ml-2">前後</span></label>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 p-3 rounded border border-blue-100">
+                <label class="block font-bold mb-2 text-blue-800">解答形式（作成後も切替可）</label>
+                <div class="flex gap-4">
+                    <label class="inline-flex items-center"><input type="radio" name="format" value="write" checked> <span class="ml-2">記述式</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="format" value="choice"> <span class="ml-2">4択式</span></label>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 p-3 rounded border border-blue-100">
+                <label class="block font-bold mb-2 text-blue-800">表示方法（作成後も切替可）</label>
+                <div class="flex gap-4">
+                    <label class="inline-flex items-center"><input type="radio" name="display" value="text" checked> <span class="ml-2">数字</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="display" value="clock"> <span class="ml-2">時計画像</span></label>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 flex gap-4">
+            <button onclick="generateDataAndRender()" class="flex-1 bg-sky-500 text-white font-bold py-3 rounded hover:bg-sky-600 transition shadow">
+                新しく問題を作る
+            </button>
+            <button onclick="window.print()" class="flex-1 bg-blue-700 text-white font-bold py-3 rounded hover:bg-blue-800 transition shadow">
+                印刷する
+            </button>
+        </div>
+        <p class="text-xs text-gray-500 mt-3 text-center">※ プリント部分の文字や数字は、クリックして直接書き直すことができます。</p>
+    </div>
+
+    <!-- プリント本体 -->
+    <div id="print-area" class="print-page">
+        <div class="flex justify-between items-end mb-8">
+            <div class="text-right w-full">
+                <div class="text-lg">なまえ：____________________________________</div>
+            </div>
+        </div>
+
+        <div id="questions-container" class="question-grid">
+            <!-- JavaScriptで生成 -->
+        </div>
+    </div>
+
+    <script>
+        let currentQuestionsData = [];
+
+        // 何時間何分の形式にフォーマットするヘルパー
+        const formatDuration = (minutes) => {
+            if (minutes < 60) {
+                return `${minutes}分`;
+            } else {
+                const h = Math.floor(minutes / 60);
+                const m = minutes % 60;
+                if (m === 0) return `${h}時間`;
+                return `${h}時間${m}分`;
+            }
+        };
+
+        // 時計のSVGを描画 (幅・高さは親要素に依存するよう調整)
+        function createClockSVG(hour, minute) {
+            const hDegree = (hour % 12) * 30 + (minute / 60) * 30;
+            const mDegree = minute * 6;
+            
+            let marks = '';
+            for (let i = 0; i < 60; i++) {
+                const angle = i * 6 * Math.PI / 180;
+                const isFive = i % 5 === 0;
+                const r1 = isFive ? 40 : 42;
+                const r2 = 45;
+                const x1 = 50 + r1 * Math.sin(angle);
+                const y1 = 50 - r1 * Math.cos(angle);
+                const x2 = 50 + r2 * Math.sin(angle);
+                const y2 = 50 - r2 * Math.cos(angle);
+                marks += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="black" stroke-width="${isFive ? 1.5 : 0.5}" />`;
+            }
+
+            let numbers = '';
+            for (let i = 1; i <= 12; i++) {
+                const angle = i * 30 * Math.PI / 180;
+                const x = 50 + 33.5 * Math.sin(angle);
+                const y = 50 - 33.5 * Math.cos(angle) + 3;
+                numbers += `<text x="${x}" y="${y}" font-size="10" text-anchor="middle" font-family="sans-serif" font-weight="500">${i}</text>`;
+            }
+            
+            return `
+                <svg viewBox="0 0 100 100" class="w-full h-full">
+                    <circle cx="50" cy="50" r="46" fill="none" stroke="black" stroke-width="1" />
+                    ${marks}
+                    ${numbers}
+                    <line x1="50" y1="50" x2="${50 + 22 * Math.sin(hDegree * Math.PI / 180)}" y2="${50 - 22 * Math.cos(hDegree * Math.PI / 180)}" stroke="black" stroke-width="2.5" stroke-linecap="round" />
+                    <line x1="50" y1="50" x2="${50 + 38 * Math.sin(mDegree * Math.PI / 180)}" y2="${50 - 38 * Math.cos(mDegree * Math.PI / 180)}" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+                    <circle cx="50" cy="50" r="2" fill="black" />
+                </svg>
+            `;
+        }
+
+        // 4択式の選択肢を生成
+        function generateChoices(diffMin) {
+            const correctStr = formatDuration(diffMin);
+            const choicesSet = new Set([correctStr]);
+
+            // よくある計算ミスをダミーとして追加
+            const offsets = [10, -10, 5, -5, 60, -60, 20, -20];
+            for (let offset of offsets) {
+                const wrongMin = diffMin + offset;
+                if (wrongMin > 0) {
+                    choicesSet.add(formatDuration(wrongMin));
+                }
+                if (choicesSet.size >= 4) break;
+            }
+
+            // 万が一4つに満たない場合のフォールバック
+            let fallback = 1;
+            while(choicesSet.size < 4) {
+                if (diffMin + fallback > 0) {
+                    choicesSet.add(formatDuration(diffMin + fallback));
+                }
+                fallback++;
+            }
+
+            const choicesArr = Array.from(choicesSet).slice(0, 4);
+            return choicesArr.sort(() => Math.random() - 0.5);
+        }
+
+        // 問題データを作成
+        function generateDataAndRender() {
+            const qCountEl = document.querySelector('input[name="qCount"]:checked');
+            const stepEl = document.querySelector('input[name="step"]:checked');
+            const overHourEl = document.querySelector('input[name="overHour"]:checked');
+            const directionEl = document.querySelector('input[name="direction"]:checked');
+
+            if (!qCountEl || !stepEl || !overHourEl || !directionEl) return;
+
+            const qCount = parseInt(qCountEl.value);
+            const step = parseInt(stepEl.value);
+            const overHour = overHourEl.value === 'yes';
+            const direction = directionEl.value;
+
+            currentQuestionsData = [];
+
+            for (let i = 0; i < qCount; i++) {
+                let diff;
+                
+                // 差分の時間を決める
+                if (overHour) {
+                    // 1時間を超える (61分〜約180分)
+                    if (step === 1) {
+                        diff = Math.floor(Math.random() * 120) + 61; 
+                    } else if (step === 5) {
+                        diff = (Math.floor(Math.random() * 24) + 13) * 5; 
+                    } else {
+                        diff = (Math.floor(Math.random() * 12) + 7) * 10; 
+                    }
+                } else {
+                    // 1時間を超えない (1分〜59分)
+                    if (step === 1) {
+                        diff = Math.floor(Math.random() * 58) + 2; 
+                    } else if (step === 5) {
+                        diff = (Math.floor(Math.random() * 11) + 1) * 5; 
+                    } else {
+                        diff = (Math.floor(Math.random() * 5) + 1) * 10; 
+                    }
+                }
+
+                // 前か後かを決める
+                let isAfter;
+                if (direction === 'mixed') {
+                    isAfter = Math.random() > 0.5;
+                } else {
+                    isAfter = (direction === 'after');
+                }
+
+                // 開始時刻(time1)をランダムに決定
+                let totalMinutes1 = Math.floor(Math.random() * (12 * 60 / step)) * step;
+                let totalMinutes2 = totalMinutes1 + diff; 
+                
+                let h1 = Math.floor(totalMinutes1 / 60) % 12;
+                if (h1 === 0) h1 = 12;
+                let m1 = totalMinutes1 % 60;
+
+                let h2 = Math.floor(totalMinutes2 / 60) % 12;
+                if (h2 === 0) h2 = 12;
+                let m2 = totalMinutes2 % 60;
+
+                let timeA = { h: h1, m: m1 };
+                let timeB = { h: h2, m: m2 };
+
+                const choices = generateChoices(diff);
+
+                currentQuestionsData.push({
+                    id: i + 1,
+                    timeA,
+                    timeB,
+                    diff,
+                    isAfter,
+                    overHour,
+                    choices
+                });
+            }
+
+            renderWorksheet();
+        }
+
+        // 保持している問題データをもとにHTMLを描画
+        function renderWorksheet() {
+            const container = document.getElementById('questions-container');
+            if (!container || currentQuestionsData.length === 0) return;
+            container.innerHTML = '';
+
+            const format = document.querySelector('input[name="format"]:checked').value;
+            const display = document.querySelector('input[name="display"]:checked').value;
+
+            currentQuestionsData.forEach(q => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'p-4 flex flex-col items-start relative border-b border-gray-200 border-dashed last:border-0 pb-6';
+                
+                const timeAText = `${q.timeA.h}時${q.timeA.m === 0 ? '' : q.timeA.m + '分'}`;
+                const timeBText = `${q.timeB.h}時${q.timeB.m === 0 ? '' : q.timeB.m + '分'}`;
+                
+                let connection1 = '';
+                let connection2 = '';
+                let questionPhrase = '';
+
+                // isAfter: true -> 「timeA から timeB は、何分後？」
+                // isAfter: false -> 「timeA は timeB の、何分前？」
+                if (q.isAfter) {
+                    connection1 = 'から';
+                    connection2 = 'は、';
+                    questionPhrase = q.overHour ? '何時間何分後でしょう？' : '何分後でしょう？';
+                } else {
+                    connection1 = 'は';
+                    connection2 = 'の、';
+                    questionPhrase = q.overHour ? '何時間何分前でしょう？' : '何分前でしょう？';
+                }
+
+                // --- 時間表示部（テキスト か 時計画像２つ） ---
+                let timeHeader = '';
+                if (display === 'text') {
+                    timeHeader = `
+                        <div class="q-text text-xl mb-3 flex items-center flex-wrap gap-2">
+                            <span class="editable font-bold" contenteditable="true">${timeAText}</span>
+                            <span class="editable" contenteditable="true">${connection1}</span>
+                            <span class="editable font-bold" contenteditable="true">${timeBText}</span>
+                            <span class="editable" contenteditable="true">${connection2}</span>
+                        </div>
+                    `;
+                } else {
+                    timeHeader = `
+                        <div class="flex items-center gap-4 mb-3 w-full">
+                            <div class="w-[120px] h-[120px] flex-shrink-0">${createClockSVG(q.timeA.h, q.timeA.m)}</div>
+                            <div class="text-xl font-bold editable" contenteditable="true">${connection1}</div>
+                            <div class="w-[120px] h-[120px] flex-shrink-0">${createClockSVG(q.timeB.h, q.timeB.m)}</div>
+                            <div class="text-xl font-bold editable" contenteditable="true">${connection2}</div>
+                        </div>
+                    `;
+                }
+
+                // 問題文
+                const questionBody = `<div class="q-text text-[1.35rem] mb-2 font-medium"><span class="editable" contenteditable="true">${questionPhrase}</span></div>`;
+
+                // --- 解答エリア ---
+                let answerArea = '';
+                if (format === 'write') {
+                    answerArea = `
+                        <div class="mt-4 text-xl w-full flex items-end">
+                            <span class="editable font-bold" contenteditable="true">答え：</span>
+                            <span class="answer-line"></span>
+                        </div>`;
+                } else {
+                    const labels = ['ア', 'イ', 'ウ', 'エ'];
+                    let choicesHTML = '';
+                    q.choices.forEach((choice, index) => {
+                        choicesHTML += `<span class="editable whitespace-nowrap" contenteditable="true">${labels[index]}：${choice}</span>`;
+                    });
+                    
+                    answerArea = `
+                        <div class="mt-4 grid grid-cols-4 gap-4 text-lg w-full font-medium">
+                            ${choicesHTML}
+                        </div>`;
+                }
+
+                qDiv.innerHTML = `
+                    <div class="absolute top-2 -left-4 text-lg font-bold editable" contenteditable="true">(${q.id})</div>
+                    ${timeHeader}
+                    ${questionBody}
+                    ${answerArea}
+                `;
+                container.appendChild(qDiv);
+            });
+        }
+
+        // ラジオボタン変更時の再描画イベント
+        document.querySelectorAll('input[name="format"], input[name="display"]').forEach(el => {
+            el.addEventListener('change', () => {
+                if (currentQuestionsData.length > 0) {
+                    renderWorksheet();
+                }
+            });
+        });
+
+        // 初期表示
+        window.onload = generateDataAndRender;
+    </script>
+</body>
+</html>
