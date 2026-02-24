@@ -87,7 +87,11 @@
                 <label class="block font-bold mb-2">問題数（1カラム用）</label>
                 <div class="flex flex-wrap gap-2">
                     <label class="inline-flex items-center cursor-pointer">
-                        <input type="radio" name="qCount" value="4" class="hidden peer" checked>
+                        <input type="radio" name="qCount" value="3" class="hidden peer" checked>
+                        <span class="px-4 py-2 border rounded hover:bg-gray-50 transition-colors">3問</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="qCount" value="4" class="hidden peer">
                         <span class="px-4 py-2 border rounded hover:bg-gray-50 transition-colors">4問</span>
                     </label>
                     <label class="inline-flex items-center cursor-pointer">
@@ -104,8 +108,8 @@
             <div>
                 <label class="block font-bold mb-2">分のきざみ</label>
                 <div class="flex gap-4">
-                    <label class="inline-flex items-center"><input type="radio" name="step" value="1" checked> <span class="ml-2">1分</span></label>
-                    <label class="inline-flex items-center"><input type="radio" name="step" value="5"> <span class="ml-2">5分</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="step" value="1"> <span class="ml-2">1分</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="step" value="5" checked> <span class="ml-2">5分</span></label>
                     <label class="inline-flex items-center"><input type="radio" name="step" value="10"> <span class="ml-2">10分</span></label>
                 </div>
             </div>
@@ -121,25 +125,25 @@
             <div>
                 <label class="block font-bold mb-2">出題内容</label>
                 <div class="flex flex-wrap gap-4">
-                    <label class="inline-flex items-center"><input type="radio" name="direction" value="after"> <span class="ml-2">後だけ（何分後？）</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="direction" value="after" checked> <span class="ml-2">後だけ（何分後？）</span></label>
                     <label class="inline-flex items-center"><input type="radio" name="direction" value="before"> <span class="ml-2">前だけ（何分前？）</span></label>
-                    <label class="inline-flex items-center"><input type="radio" name="direction" value="mixed" checked> <span class="ml-2">前後</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="direction" value="mixed"> <span class="ml-2">前後</span></label>
                 </div>
             </div>
 
             <div class="bg-blue-50 p-3 rounded border border-blue-100">
                 <label class="block font-bold mb-2 text-blue-800">解答形式（作成後も切替可）</label>
                 <div class="flex gap-4">
-                    <label class="inline-flex items-center"><input type="radio" name="format" value="write" checked> <span class="ml-2">記述式</span></label>
-                    <label class="inline-flex items-center"><input type="radio" name="format" value="choice"> <span class="ml-2">4択式</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="format" value="write"> <span class="ml-2">記述式</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="format" value="choice" checked> <span class="ml-2">4択式</span></label>
                 </div>
             </div>
 
             <div class="bg-blue-50 p-3 rounded border border-blue-100">
                 <label class="block font-bold mb-2 text-blue-800">表示方法（作成後も切替可）</label>
                 <div class="flex gap-4">
-                    <label class="inline-flex items-center"><input type="radio" name="display" value="text" checked> <span class="ml-2">数字</span></label>
-                    <label class="inline-flex items-center"><input type="radio" name="display" value="clock"> <span class="ml-2">時計画像</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="display" value="text"> <span class="ml-2">数字</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="display" value="clock" checked> <span class="ml-2">時計画像</span></label>
                 </div>
             </div>
         </div>
