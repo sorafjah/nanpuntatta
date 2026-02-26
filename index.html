@@ -133,8 +133,9 @@
 
             <div class="bg-blue-50 p-3 rounded border border-blue-100">
                 <label class="block font-bold mb-2 text-blue-800">解答形式（作成後も切替可）</label>
-                <div class="flex gap-4">
+                <div class="flex flex-wrap gap-4">
                     <label class="inline-flex items-center"><input type="radio" name="format" value="write"> <span class="ml-2">記述式</span></label>
+                    <label class="inline-flex items-center"><input type="radio" name="format" value="choice2"> <span class="ml-2">2択式</span></label>
                     <label class="inline-flex items-center"><input type="radio" name="format" value="choice" checked> <span class="ml-2">4択式</span></label>
                 </div>
             </div>
@@ -148,12 +149,15 @@
             </div>
         </div>
 
-        <div class="mt-8 flex gap-4">
+        <div class="mt-8 flex flex-col sm:flex-row gap-4">
             <button onclick="generateDataAndRender()" class="flex-1 bg-sky-500 text-white font-bold py-3 rounded hover:bg-sky-600 transition shadow">
                 新しく問題を作る
             </button>
             <button onclick="window.print()" class="flex-1 bg-blue-700 text-white font-bold py-3 rounded hover:bg-blue-800 transition shadow">
                 印刷する
+            </button>
+            <button onclick="saveHTML()" class="flex-1 bg-indigo-700 text-white font-bold py-3 rounded hover:bg-indigo-800 transition shadow">
+                保存する (HTML)
             </button>
         </div>
         <p class="text-xs text-gray-500 mt-3 text-center">※ プリント部分の文字や数字は、クリックして直接書き直すことができます。</p>
@@ -225,7 +229,7 @@
             `;
         }
 
-        // 4択式の選択肢を生成
+        // 4択式の選択肢を生成 (2択の場合もここから抽出する)
         function generateChoices(diffMin) {
             const correctStr = formatDuration(diffMin);
             const choicesSet = new Set([correctStr]);
@@ -397,7 +401,24 @@
                             <span class="editable font-bold" contenteditable="true">答え：</span>
                             <span class="answer-line"></span>
                         </div>`;
+                } else if (format === 'choice2') {
+                    // 2択式：正解と不正解を1つずつ抽出してシャッフル
+                    const correctStr = formatDuration(q.diff);
+                    const wrongChoice = q.choices.find(c => c !== correctStr);
+                    const choicesForRender = [correctStr, wrongChoice].sort(() => Math.random() - 0.5);
+                    const labels = ['ア', 'イ'];
+                    
+                    let choicesHTML = '';
+                    choicesForRender.forEach((choice, index) => {
+                        choicesHTML += `<span class="editable whitespace-nowrap" contenteditable="true">${labels[index]}：${choice}</span>`;
+                    });
+                    
+                    answerArea = `
+                        <div class="mt-4 grid grid-cols-2 gap-4 text-lg w-full font-medium">
+                            ${choicesHTML}
+                        </div>`;
                 } else {
+                    // 4択式
                     const labels = ['ア', 'イ', 'ウ', 'エ'];
                     let choicesHTML = '';
                     q.choices.forEach((choice, index) => {
@@ -418,6 +439,37 @@
                 `;
                 container.appendChild(qDiv);
             });
+        }
+
+        // HTMLを保存する機能
+        function saveHTML() {
+            // 現在のラジオボタンの選択状態をHTMLの属性に反映する（保存後のファイルでも選択状態を維持するため）
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                if (radio.checked) {
+                    radio.setAttribute('checked', 'checked');
+                } else {
+                    radio.removeAttribute('checked');
+                }
+            });
+
+            // 現在のHTML全体を取得
+            const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+            
+            // Blobを作成してダウンロードリンクを生成
+            const blob = new Blob([htmlContent], { type: 'text/html; charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '時間の経過プリント.html';
+            
+            // クリックしてダウンロードを実行
+            document.body.appendChild(a);
+            a.click();
+            
+            // クリーンアップ
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         // ラジオボタン変更時の再描画イベント
